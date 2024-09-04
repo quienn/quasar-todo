@@ -1,47 +1,82 @@
 <template>
-  <q-page class="row items-center justify-evenly">
-    <example-component
-      title="Example component"
-      active
-      :todos="todos"
-      :meta="meta"
-    ></example-component>
+  <q-page>
+    <q-list v-if="tasks.length > 0" bordered>
+      <q-item v-for="task in tasks" :key="task.id">
+        <q-item-section>
+          <q-checkbox v-model="task.completed" />
+        </q-item-section>
+        <q-item-section>
+          <q-item-label>{{ task.title }}</q-item-label>
+        </q-item-section>
+        <q-item-section side>
+          <q-btn icon="edit" @click="edit(task.id)" />
+          <q-btn icon="delete" @click="del(task.id)" />
+        </q-item-section>
+      </q-item>
+    </q-list>
+    <q-page-sticky position="bottom-right">
+      <q-btn fab color="primary" icon="add" @click="prompt" />
+    </q-page-sticky>
   </q-page>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import { Todo, Meta } from 'components/models';
-import ExampleComponent from 'components/ExampleComponent.vue';
+import { useStorage } from '@vueuse/core';
+import { useQuasar } from 'quasar';
+import { onMounted } from 'vue';
+import { Todo } from './model';
 
 defineOptions({
-  name: 'IndexPage'
+  name: 'IndexPage',
 });
 
-const todos = ref<Todo[]>([
-  {
-    id: 1,
-    content: 'ct1'
-  },
-  {
-    id: 2,
-    content: 'ct2'
-  },
-  {
-    id: 3,
-    content: 'ct3'
-  },
-  {
-    id: 4,
-    content: 'ct4'
-  },
-  {
-    id: 5,
-    content: 'ct5'
-  }
-]);
+const $q = useQuasar();
 
-const meta = ref<Meta>({
-  totalCount: 1200
+let tasks = useStorage('tasksx', [] as Todo[]);
+
+function prompt() {
+  $q.dialog({
+    title: 'Prompt',
+    message: 'Título de la tarea:',
+    prompt: {
+      model: '',
+      type: 'text',
+    },
+    cancel: true,
+    persistent: true,
+  }).onOk((data) => {
+    tasks.value.push({
+      id: tasks.value.length + 1,
+      title: data,
+      completed: false,
+    });
+  });
+}
+
+function del(id: number) {
+  tasks.value = tasks.value.filter((task) => task.id !== id);
+}
+
+function edit(id: number) {
+  const task = tasks.value.find((task) => task.id === id);
+  $q.dialog({
+    title: 'Edit',
+    message: 'Título de la tarea:',
+    prompt: {
+      model: task!.title,
+      type: 'text',
+    },
+    cancel: true,
+    persistent: true,
+  }).onOk((data) => {
+    task!.title = data;
+  });
+}
+
+onMounted(() => {
+  $q.notify({
+    message: 'Hello, World!',
+    color: 'primary',
+  });
 });
 </script>
